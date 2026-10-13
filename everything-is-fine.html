@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f2f3f5">
+<meta name="description" content="Everything Is Fine. A tiny, deeply British endless runner. Jump the obstacles. Duck the pigeons. Pretend nothing's wrong.">
+<title>EVERYTHING IS FINE. — A British survival simulator</title>
+<style>
+  :root{color-scheme:light;--ink:#292d33;--mid:#747a84;--paper:#f2f3f5;--soft:#dce0e5}
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  html{min-height:100%;background:var(--paper)}
+  body{min-height:100vh;margin:0;background:var(--paper);color:var(--ink);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;-webkit-font-smoothing:none;display:grid;place-items:center}
+  main{width:100%;max-width:1050px;padding:clamp(30px,6vh,68px) clamp(14px,3vw,34px);margin:auto}
+  /* Neutral reserved spaces: no ad network or third-party scripts are loaded. */
+  .ad-space{width:min(728px,100%);height:90px;display:flex;align-items:center;justify-content:center;text-align:center;margin-inline:auto;background:#eceef1;border:1px dashed #bdc3cc;color:#777f8c;font:700 11px ui-monospace,monospace;letter-spacing:.06em;text-decoration:none;cursor:pointer}
+  .ad-space:visited{color:#777f8c}
+  .ad-space:hover{background:#e3e7ec;border-color:#929aa6;color:var(--ink)}
+  .ad-space:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+  .ad-space-top{margin-bottom:clamp(27px,5vh,48px)}
+  .ad-space-bottom{margin-top:clamp(30px,5vh,52px)}
+  .ad-mobile-label{display:none}
+  .masthead{text-align:center;margin:0 0 clamp(32px,5vh,52px)}
+  .pixel-title{display:block;width:min(100%,560px);height:auto;margin:0 auto;image-rendering:pixelated;image-rendering:crisp-edges}
+  .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  .subtitle{color:var(--mid);margin:12px 0 0;font-size:11px;letter-spacing:.035em}
+  .game-shell{background:var(--paper)}
+  .hud{min-height:37px;padding:0 4px 10px;display:flex;align-items:end;justify-content:space-between;gap:18px}
+  .hud-sound{padding:0;min-height:24px;font-size:11px;font-weight:900;letter-spacing:.045em;color:var(--ink);text-align:left}
+  .tiny-label{color:var(--mid);font-size:10px;font-weight:700;letter-spacing:.06em}
+  .scores{display:flex;gap:23px;flex:none;align-items:baseline}
+  .score-block{display:flex;align-items:baseline;gap:7px}
+  .score-block strong{font-size:14px;font-weight:900;letter-spacing:.035em;font-variant-numeric:tabular-nums}
+  .game-area{position:relative;aspect-ratio:640 / 235;overflow:hidden;isolation:isolate;background:var(--paper);touch-action:none}
+  .game-area > canvas{display:block;position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges}
+  .overlay{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;background:rgba(242,243,245,.86)}
+  .overlay.hidden{display:none}
+  .overlay-card{width:min(470px,100%);padding:10px 13px}
+  .incident-panel{margin:0 auto}
+  .overlay.is-incident .incident-panel{max-width:430px;border:2px solid var(--ink);background:var(--paper);box-shadow:4px 4px 0 var(--soft);padding:13px 15px 16px;margin:0 auto}
+  .overlay.is-incident .overlay-kicker{margin-bottom:7px}
+  /* Keep an accessible heading, but render the incident heading in actual pixels. */
+  .overlay.is-incident .overlay-title{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  .incident-pixel-title{display:block;width:min(100%,380px);height:auto;margin:0 auto 11px;image-rendering:pixelated;image-rendering:crisp-edges}
+  .overlay.is-incident .overlay-desc{margin-bottom:0}
+  .overlay-kicker{font-size:9px;letter-spacing:.1em;font-weight:900;color:var(--mid);margin:0 0 11px}
+  .overlay-title{font-size:clamp(19px,3vw,29px);font-weight:900;letter-spacing:-.06em;line-height:1.12;margin:0 0 10px}
+  .overlay-desc{font-size:11px;line-height:1.55;max-width:380px;margin:0 auto 14px}
+  .overlay-keys{display:flex;justify-content:center;gap:19px;align-items:center;margin:0 0 17px}
+  .key-hint{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:10px;white-space:nowrap}
+  kbd{font:700 10px ui-monospace,monospace;border:1px solid #a3a9b2;padding:4px 6px;color:var(--ink);background:var(--paper)}
+  .overlay-actions{display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:15px}
+  .pixel-btn{border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);padding:11px 15px;font:900 11px ui-monospace,monospace;letter-spacing:.015em;min-height:37px;cursor:pointer;touch-action:manipulation}
+  .pixel-btn:hover{background:#4b515b}
+  .pixel-btn.secondary{background:var(--paper);color:var(--ink)}
+  .pixel-btn.secondary:hover{background:var(--soft)}
+  .strip{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 4px 0}
+  .strip-controls{display:flex;align-items:center;flex-wrap:wrap;gap:16px;min-width:0;color:var(--mid)}
+  .strip-control{display:inline-flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.015em;white-space:nowrap}
+  .strip-control kbd{color:var(--ink);border-color:#abb1b9;padding:3px 5px;font-size:10px}
+  .strip-control strong{font-size:10px;font-weight:800;letter-spacing:.045em;color:var(--mid)}
+  .icon-btn{border:0;background:none;padding:6px 0 6px 10px;font:700 10px ui-monospace,monospace;color:var(--mid);white-space:nowrap;cursor:pointer}
+  .icon-btn:hover{color:var(--ink)}
+  .touch-controls{display:none;justify-content:center;gap:12px;margin:20px auto 0}
+  .touch-btn{flex:1;max-width:230px;height:57px;border:1px solid var(--ink);background:var(--paper);color:var(--ink);font:900 12px ui-monospace,monospace;touch-action:none;user-select:none;-webkit-user-select:none}
+  .touch-btn:active,.touch-btn.pressed{background:var(--ink);color:var(--paper)}
+  .pixel-btn:focus-visible,.icon-btn:focus-visible,.touch-btn:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+  @media(hover:none),(pointer:coarse){.touch-controls{display:flex}}
+  @media(max-width:680px){
+    .ad-space{width:min(320px,100%);height:100px;font-size:10px}
+    .ad-desktop-label{display:none}.ad-mobile-label{display:inline}
+    .ad-space-top{margin-bottom:26px}.ad-space-bottom{margin-top:30px}
+    main{padding:32px 12px 28px}
+    .masthead{margin-bottom:27px}.pixel-title{width:min(100%,460px)}.subtitle{font-size:10px}
+    .hud{min-height:27px;padding-bottom:7px;gap:8px}
+    .hud-sound{font-size:9px;min-height:22px}
+    .game-area.incident-active{min-height:260px;aspect-ratio:auto}
+    .overlay.is-incident .overlay-card{padding:4px 6px}
+    .overlay.is-incident .incident-panel{padding:11px 10px 12px;margin-bottom:0;box-shadow:3px 3px 0 var(--soft)}
+    .overlay.is-incident .overlay-actions{margin-top:11px;gap:8px}
+    .incident-pixel-title{width:min(100%,350px);margin-bottom:8px}
+    .overlay.is-incident .overlay-desc{font-size:10px;line-height:1.4}
+    .scores{gap:10px}.score-block{gap:4px}.tiny-label{font-size:8px}.score-block strong{font-size:11px}
+    .game-area{aspect-ratio:640 / 275}
+    .overlay{padding:4px}.overlay-card{padding:2px 6px}
+    .overlay-kicker{font-size:8px;margin:0 0 5px}.overlay-title{font-size:clamp(17px,5vw,23px);margin-bottom:5px}
+    .overlay-desc{font-size:9px;line-height:1.3;margin-bottom:8px}.overlay-keys{gap:12px;margin-bottom:8px}
+    .key-hint{font-size:9px}.key-hint kbd{font-size:9px;padding:2px 5px}
+    .pixel-btn{min-height:30px;padding:6px 11px;font-size:10px}
+    .strip{padding-top:8px;gap:6px}.strip-controls{gap:11px}.strip-control{gap:5px;font-size:9px}.strip-control kbd{padding:2px 4px;font-size:9px}.strip-control strong{font-size:9px}.icon-btn{font-size:9px}
+  }
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.001ms!important;transition-duration:.001ms!important}}
+</style>
+</head>
+<body>
+<main>
+  <a class="ad-space ad-space-top" href="mailto:ads@everythingisfine.run" aria-label="Enquire about top advertising space: email ads@everythingisfine.run" title="Email ads@everythingisfine.run about advertising">
+    <span class="ad-desktop-label">ADVERTISING SPACE — 728 × 90 px</span>
+    <span class="ad-mobile-label">ADVERTISING SPACE — 320 × 100 px</span>
+  </a>
+  <header class="masthead">
+    <canvas id="titleCanvas" class="pixel-title" width="560" height="56" aria-hidden="true"></canvas>
+    <h1 class="sr-only">EVERYTHING IS FINE.</h1>
+    <p class="subtitle">A British survival simulator. Keep calm and carry on.</p>
+  </header>
+  <section class="game-shell" aria-label="Everything Is Fine endless runner game">
+    <div class="hud">
+      <button id="soundBtn" class="icon-btn hud-sound" type="button" aria-pressed="true">SOUND: ON</button>
+      <div class="scores"><div class="score-block"><span class="tiny-label">SCORE</span><strong id="score">00000</strong></div><div class="score-block"><span class="tiny-label">BEST</span><strong id="best">00000</strong></div></div>
+    </div>
+    <div class="game-area" id="gameArea">
+      <canvas id="game" width="640" height="235" role="img" aria-label="Pixel-art runner. A weary British commuter runs automatically. Press Space to jump ground obstacles and hold the Down arrow to duck under flying obstacles."></canvas>
+      <div id="overlay" class="overlay hidden">
+        <div class="overlay-card">
+          <div class="incident-panel">
+            <p id="overlayKicker" class="overlay-kicker">OFFICIAL INCIDENT REPORT</p>
+            <h2 class="overlay-title" id="overlayTitle">YOU SURVIVED 0 SECONDS.</h2>
+            <canvas id="incidentTitleCanvas" class="incident-pixel-title" width="380" height="48" aria-hidden="true" hidden></canvas>
+            <p class="overlay-desc" id="overlayDesc"></p>
+            <div class="overlay-actions"><button id="startBtn" class="pixel-btn" type="button">TRY AGAIN ↻</button><button id="shareBtn" class="pixel-btn secondary" type="button" hidden>SHARE MISERY ↗</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="strip">
+      <div class="strip-controls" aria-label="Game controls">
+        <span class="strip-control"><kbd>SPACE</kbd><strong>JUMP</strong></span>
+        <span class="strip-control"><kbd>↓</kbd><strong>DUCK</strong></span>
+      </div>
+    </div>
+  </section>
+  <div class="touch-controls" aria-label="Mobile game controls"><button class="touch-btn" id="jumpBtn" type="button">↑ JUMP</button><button class="touch-btn" id="duckBtn" type="button">↓ DUCK (HOLD)</button></div>
+  <a class="ad-space ad-space-bottom" href="mailto:ads@everythingisfine.run" aria-label="Enquire about bottom advertising space: email ads@everythingisfine.run" title="Email ads@everythingisfine.run about advertising">
+    <span class="ad-desktop-label">ADVERTISING SPACE — 728 × 90 px</span>
+    <span class="ad-mobile-label">ADVERTISING SPACE — 320 × 100 px</span>
+  </a>
+</main>
+<script>
+(()=>{'use strict';
+  const canvas=document.getElementById('game'), ctx=canvas.getContext('2d',{alpha:false});
+  if(!ctx) return;
+  ctx.imageSmoothingEnabled=false;
+  const W=640,H=235,G=188,INK='#292d33', MID='#7f8691', PALE='#bec4cd', BG='#f2f3f5';
+  const BIN_GREEN='#3f8f43', BIN_GREEN_DARK='#2a6630', BIN_GREEN_LIGHT='#76b779';
+  const BIN_RED='#b14a46', BIN_RED_DARK='#7e2f2b', BIN_RED_LIGHT='#d07a74';
+  const POO_BROWN='#70502c', POO_BROWN_DARK='#4c3218';
+  const DOG_GREYBLUE='#768a9b', DOG_GREYBLUE_DARK='#566877', DOG_GREYBLUE_LIGHT='#98a9b7';
+  const PIGEON_GREY='#8e959d', PIGEON_GREY_DARK='#68727c', PIGEON_BREAST='#91a79e';
+  const CONE_ORANGE='#ef8b21', CONE_ORANGE_DARK='#c76510';
+  const BILL_RED='#d24845', BILL_RED_DARK='#a72f31';
+  const $=id=>document.getElementById(id);
+  const ui={overlay:$('overlay'),kicker:$('overlayKicker'),title:$('overlayTitle'),desc:$('overlayDesc'),start:$('startBtn'),share:$('shareBtn'),score:$('score'),best:$('best'),sound:$('soundBtn'),jump:$('jumpBtn'),duck:$('duckBtn')};
+  const titleCanvas=$('titleCanvas'), incidentTitleCanvas=$('incidentTitleCanvas');
+  const stages=[
+    {threshold:0,ticker:'PLEASE REMAIN CALM. THE SITUATION IS UNDER CONTROL.'},
+    {threshold:90,ticker:'ROADWORKS EXPECTED TO FINISH IN 2047.'},
+    {threshold:230,ticker:'AN INVESTIGATION HAS BEEN LAUNCHED INTO THE OTHER INVESTIGATION.'},
+    {threshold:420,ticker:'THE NATIONAL EMERGENCY HOTLINE IS CURRENTLY UNAVAILABLE.'},
+    {threshold:670,ticker:'GOVERNMENT SPOKESPERSON: "EVERYTHING IS FINE."'}
+  ];
+  const outcomes={
+    cone:["You were defeated by a traffic cone. Very British.","Road closed. Alternative route: none."],
+    bin:["A wheelie bin has ended your promising career.","Bin day has been postponed indefinitely."],
+    poo:["You were bested by a suspicious pavement deposit.","Dog fouling remains a live issue in your borough."],
+    dog:["A Staffordshire Bull Terrier has interrupted proceedings.","You have been outmatched by a stocky local celebrity."],
+    gull:["A seagull has been promoted ahead of you.","A seagull has claimed your chips and your dignity."],
+    bill:["Your energy bill has finally caught up with you.","FINAL NOTICE: optimism has been discontinued."]
+  };
+  let mode='ready',score=0,best=0,stage=0,dist=0,frame=0,world=0,last=0,spawnIn=230,obstacles=[],particles=[],duckHeld=false,muted=false,audio=null,runId=0;
+  let pint=null,pintIn=275,invincible=0;
+  const PINT_SECONDS=4, PINT_DURATION=PINT_SECONDS*60, BEER='#d2a747', BEER_DARK='#85642b', BEER_FOAM='#f8f9fb';
+  const person={jump:0,vy:0,duck:false,blink:0};
+  function getBest(){try{return Math.max(0,parseInt(localStorage.getItem('everything-is-fine-best')||'0',10)||0)}catch(e){return 0}}
+  function setBest(v){try{localStorage.setItem('everything-is-fine-best',String(v))}catch(e){}}
+  best=getBest();ui.best.textContent=pad(best);
+  function pad(n){return String(Math.floor(n)).padStart(5,'0')}
+  function R(x,y,w,h,c=INK){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h))}
+  function L(x,y,x2,y2,c=INK){ctx.strokeStyle=c;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(Math.round(x)+.5,Math.round(y)+.5);ctx.lineTo(Math.round(x2)+.5,Math.round(y2)+.5);ctx.stroke()}
+  function txt(s,x,y,size=9,color=INK,align='left'){ctx.font=`900 ${size}px monospace`;ctx.textAlign=align;ctx.fillStyle=color;ctx.fillText(s,x,y);ctx.textAlign='left'}
+  function rng(n){return Math.floor(Math.random()*n)}
+  function sound(freq,dur=.08,type='square',vol=.027){if(muted)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();let osc=audio.createOscillator(),gain=audio.createGain(),t=audio.currentTime;osc.type=type;osc.frequency.setValueAtTime(freq,t);osc.frequency.exponentialRampToValueAtTime(Math.max(30,freq*.66),t+dur);gain.gain.setValueAtTime(vol,t);gain.gain.exponentialRampToValueAtTime(.0001,t+dur);osc.connect(gain);gain.connect(audio.destination);osc.start(t);osc.stop(t+dur)}catch(e){}}
+
+  // Both title screens use precisely the same hand-drawn 5x7 glyphs.
+  const titleGlyphs={
+    '0':['01110','10001','10011','10101','11001','10001','01110'],
+    '1':['00100','01100','00100','00100','00100','00100','01110'],
+    '2':['01110','10001','00001','00010','00100','01000','11111'],
+    '3':['11110','00001','00001','01110','00001','00001','11110'],
+    '4':['00010','00110','01010','10010','11111','00010','00010'],
+    '5':['11111','10000','10000','11110','00001','00001','11110'],
+    '6':['01111','10000','10000','11110','10001','10001','01110'],
+    '7':['11111','00001','00010','00100','01000','01000','01000'],
+    '8':['01110','10001','10001','01110','10001','10001','01110'],
+    '9':['01110','10001','10001','01111','00001','00001','11110'],
+    'C':['01111','10000','10000','10000','10000','10000','01111'],
+    'D':['11110','10001','10001','10001','10001','10001','11110'],
+    'O':['01110','10001','10001','10001','10001','10001','01110'],
+    'U':['10001','10001','10001','10001','10001','10001','01110'],
+    'X':['10001','10001','01010','00100','01010','10001','10001'],
+    'A':['01110','10001','10001','11111','10001','10001','10001'],
+    'E':['11111','10000','10000','11110','10000','10000','11111'],
+    'F':['11111','10000','10000','11110','10000','10000','10000'],
+    'G':['01111','10000','10000','10011','10001','10001','01110'],
+    'H':['10001','10001','10001','11111','10001','10001','10001'],
+    'I':['11111','00100','00100','00100','00100','00100','11111'],
+    'N':['10001','11001','10101','10011','10001','10001','10001'],
+    'R':['11110','10001','10001','11110','10100','10010','10001'],
+    'S':['01111','10000','10000','01110','00001','00001','11110'],
+    'T':['11111','00100','00100','00100','00100','00100','00100'],
+    'V':['10001','10001','10001','10001','10001','01010','00100'],
+    'Y':['10001','10001','01010','00100','00100','00100','00100'],
+    '.':['00000','00000','00000','00000','00000','00110','00110'],
+    ' ':['000','000','000','000','000','000','000']
+  };
+  function drawPixelTitle(target){
+    if(!target || target.hidden)return;
+    const context=target.getContext('2d');
+    if(!context)return;
+    const phrase=target===titleCanvas?'EVERYTHING IS FINE.':ui.title.textContent;
+    const maxWidth=target===titleCanvas?560:380;
+    // Compute width from actual glyphs, so the variable seconds label always fits.
+    const cssW=Math.min(target.clientWidth||maxWidth,maxWidth);
+    let cols=0;
+    for(const ch of phrase)cols+=(titleGlyphs[ch]?.[0].length||5)+1;
+    cols--;
+    const scale=target===titleCanvas?Math.max(2,Math.floor(cssW/120)):Math.max(1,Math.floor((cssW-16)/cols));
+    const pixelW=cols*scale;
+    const padX=Math.max(6,Math.floor(scale*2));
+    const padY=Math.max(6,Math.floor(scale*1.75));
+    const width=pixelW+padX*2, height=7*scale+padY*2;
+    target.width=width;
+    target.height=height;
+    target.style.aspectRatio=`${width} / ${height}`;
+    context.imageSmoothingEnabled=false;
+    context.fillStyle=BG;
+    context.fillRect(0,0,width,height);
+    let x=Math.floor((width-pixelW)/2);
+    for(const ch of phrase){
+      const glyph=titleGlyphs[ch]||titleGlyphs[' '];
+      const gw=glyph[0].length;
+      for(let ry=0;ry<glyph.length;ry++){
+        for(let rx=0;rx<gw;rx++){
+          if(glyph[ry][rx]==='1'){
+            context.fillStyle=INK;
+            context.fillRect(x+rx*scale,padY+ry*scale,scale,scale);
+          }
+        }
+      }
+      x+=(gw+1)*scale;
+    }
+  }
+  function refreshPixelTitles(){drawPixelTitle(titleCanvas);drawPixelTitle(incidentTitleCanvas)}
+  window.addEventListener('resize',refreshPixelTitles);
+  refreshPixelTitles();
+
+  function updateHud(){ui.score.textContent=pad(score);ui.best.textContent=pad(best)}
+  function setStage(s){if(s===stage)return;stage=s;if(mode==='playing'){sound(650,.15,'square',.019);for(let k=0;k<12;k++)particles.push({x:450+rng(30),y:70+rng(16),vx:(rng(6)-3)*.4,vy:-rng(3)*.2,life:20+rng(30)})}}
+  function reset(){score=0;dist=0;frame=0;world=0;spawnIn=225;obstacles=[];particles=[];pint=null;pintIn=275;invincible=0;person.jump=0;person.vy=0;person.duck=false;duckHeld=false;runId++;stage=0;updateHud()}
+  function begin(jumpImmediately=false){reset();mode='playing';ui.overlay.classList.remove('is-incident');$('gameArea').classList.remove('incident-active');ui.overlay.classList.add('hidden');if(jumpImmediately)jump();sound(270,.09)}
+  function jump(){if(mode!=='playing'){begin(true);return}if(person.jump===0&&!person.duck){person.jump=.01;person.vy=7.35;sound(570,.09);for(let i=0;i<4;i++)particles.push({x:100+rng(15),y:G-1,vx:-1-rng(2),vy:-rng(2),life:15})}}
+  function setDuck(v){if(mode==='ready'&&v)begin(false);duckHeld=v;if(mode==='playing')person.duck=duckHeld&&person.jump===0}
+  function spawn(){const pool=['cone','bin','poo'];if(score>=55)pool.push('dog');if(score>=35)pool.push('gull');if(score>=120)pool.push('bill');if(score>=250)pool.push('gull','gull','dog');const kind=pool[rng(pool.length)];const config={cone:{w:19,h:22},bin:{w:34,h:39},poo:{w:20,h:10},dog:{w:34,h:24},gull:{w:31,h:13},bill:{w:31,h:15}}[kind];const variant=kind==='bin'?(rng(2)?'green':'red'):null;obstacles.push({kind,x:W+30,w:config.w,h:config.h,wing:rng(20),variant});const speed=3.2+Math.min(3.5,score/205);spawnIn=155+rng(105)+speed*8;if(score>500)spawnIn-=10}
+  function collectPint(){
+    // Exactly four seconds at the game's normal 60fps time scale.
+    pint=null;invincible=PINT_DURATION;
+    sound(840,.17,'square',.025);
+    for(let i=0;i<16;i++)particles.push({x:102+rng(28),y:G-35-rng(42),vx:(rng(100)-50)/18,vy:-rng(30)/12,life:18+rng(24),gold:true});
+  }
+  function pintCollision(){
+    if(!pint)return false;
+    const pw=person.duck?33:30,ph=person.duck?15:44,px=96,py=G-person.jump-ph;
+    return px+pw-4>pint.x+2 && px+4<pint.x+pint.w-2 && py+ph-3>pint.y+2 && py+2<pint.y+pint.h-2;
+  }
+  function collision(o){const pW=person.duck?33:19,pH=person.duck?15:33;const px=96,py=G-person.jump-pH;const ox=o.x+3,ow=o.w-6,oy=(o.kind==='gull'||o.kind==='bill')?G-30:(G-o.h),oh=o.h;return px+3<ox+ow&&px+pW-4>ox&&py+3<oy+oh&&py+pH-2>oy}
+  function die(kind){mode='dead';sound(190,.20,'sawtooth',.04);const done=Math.floor(score);if(done>best){best=done;setBest(best)}updateHud();const options=outcomes[kind]||outcomes.cone;ui.kicker.textContent='OFFICIAL INCIDENT REPORT';ui.title.textContent=`YOU SURVIVED ${Math.floor(frame/60)} SECONDS.`;incidentTitleCanvas.hidden=false;ui.desc.textContent=options[rng(options.length)];ui.start.textContent='TRY AGAIN ↻';ui.share.hidden=false;ui.overlay.classList.add('is-incident');$('gameArea').classList.add('incident-active');ui.overlay.classList.remove('hidden');drawPixelTitle(incidentTitleCanvas)}
+  function tick(dt){if(mode!=='playing')return;frame+=dt;const speed=3.2+Math.min(3.5,score/205);world+=speed*dt;dist+=speed*dt;score=Math.floor(dist/9.5);ui.score.textContent=pad(score);if(score>best){best=score;ui.best.textContent=pad(best)}let nextStage=0;for(let j=1;j<stages.length;j++)if(score>=stages[j].threshold)nextStage=j;setStage(nextStage);
+    if(person.jump>0){person.jump+=person.vy*dt;person.vy-=(duckHeld?.78:.43)*dt;if(person.jump<=0){person.jump=0;person.vy=0;for(let i=0;i<4;i++)particles.push({x:99+rng(14),y:G-1,vx:-rng(4),vy:-rng(2),life:13})}}person.duck=duckHeld&&person.jump===0;
+    // Pickups are separate from hazards: catching a beer never costs a life.
+    // The pint floats just above head height, so a little jump is required.
+    if(invincible>0)invincible=Math.max(0,invincible-dt);
+    if(pint){
+      pint.x-=speed*dt;pint.wing+=dt;
+      if(pintCollision())collectPint();
+      else if(pint.x+pint.w<0)pint=null;
+    }else{
+      pintIn-=dt;
+      if(pintIn<=0){
+        pint={x:W+28,y:G-70,w:20,h:25,wing:0};
+        pintIn=790+rng(370); // another opportunity roughly every 13–19 s
+      }
+    }
+    spawnIn-=speed*dt;if(spawnIn<=0)spawn();
+    for(const o of obstacles){o.x-=speed*dt;o.wing+=dt;if(invincible<=0&&collision(o)){die(o.kind);return}}
+    obstacles=obstacles.filter(o=>o.x+o.w>0);
+    for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=.07*dt;p.life-=dt}particles=particles.filter(p=>p.life>0);
+  }
+  function drawCloud(x,y,s=1){R(x+6*s,y,26*s,3*s,PALE);R(x,y+3*s,45*s,5*s,PALE);R(x+10*s,y-4*s,13*s,4*s,PALE);R(x+37*s,y+2*s,14*s,4*s,PALE)}
+  // Quiet, recognisably British high street. Just one or two sparse landmarks
+  // on screen at a time. Everything is drawn in the canvas at native pixel size.
+  const landmarkPalette={wall:'#e3e6ea',line:'#b1b8c1',glass:'#f3f5f7',detail:'#cbd1d8',sign:'#737c89'};
+  const landmarks=[
+    {kind:'job',label:'JOB CENTRE',w:112,h:66,gap:186},
+    {kind:'pub',style:'classic',label:'THE RED LION',w:111,h:70,gap:206},
+    {kind:'telephone',style:'classic',w:32,h:52,gap:177},
+    {kind:'pound',label:'POUNDLAND',w:114,h:60,gap:187},
+    {kind:'post',label:'POST OFFICE',w:106,h:63,gap:211},
+    {kind:'pub',style:'broad',label:'DOG & DUCK',w:110,h:67,gap:189},
+    {kind:'tesco',label:'TESCO',w:116,h:61,gap:201},
+    {kind:'telephone',style:'weathered',w:32,h:52,gap:204},
+    {kind:'pub',style:'narrow',label:'THE CROWN',w:102,h:67,gap:209}
+  ];
+  let landmarkCycle=0;
+  for(const item of landmarks){item.position=landmarkCycle;landmarkCycle+=item.w+item.gap}
+  function shopWindow(x,y,w,h){
+    const P=landmarkPalette;
+    R(x,y,w,h,P.line);R(x+2,y+2,w-4,h-4,P.glass);
+    R(x+Math.floor(w/2),y+2,2,h-4,P.line);
+    R(x+2,y+Math.floor(h/2),w-4,2,P.line);
+  }
+  function shopDoor(x,y,w=17,h=26){
+    const P=landmarkPalette;
+    R(x,y,w,h,P.line);R(x+2,y+2,w-4,h-2,BG);
+    R(x+w-5,y+Math.floor(h/2),2,2,P.sign);
+  }
+  function shopSign(label,x,y,w){
+    const P=landmarkPalette;
+    R(x,y,w,14,P.glass);R(x,y,w,2,P.line);R(x,y+12,w,2,P.line);
+    txt(label,x+w/2,y+10,8,P.sign,'center');
+  }
+  function drawTelephoneBox(x,weathered=false){
+    // Recognisable K6-style red British telephone kiosk: bowed crown, top
+    // TELEPHONE panel, recessed multi-pane windows and a solid lower door.
+    const y=G-11,red='#a74d54',redShade='#75383f',redLight='#cb8185',glass='#edf0f3';
+    R(x+4,y-48,24,47,red);R(x+1,y-43,30,43,red);
+    R(x+3,y-51,26,5,red);R(x+6,y-53,20,3,red);R(x+10,y-55,12,3,red);
+    R(x+2,y-48,28,2,redShade);R(x+5,y-47,22,7,BG);
+    txt('TELEPHONE',x+16,y-42,5,redShade,'center');
+    R(x+6,y-38,20,29,redShade);R(x+8,y-36,16,25,glass);
+    R(x+15,y-37,2,27,redShade); // centre mullion
+    for(const dy of [-28,-19])R(x+7,y+dy,18,2,redShade);
+    R(x+4,y-40,3,39,redLight);R(x+25,y-40,3,39,redShade);
+    R(x+12,y-5,8,2,redShade);R(x+1,y-2,30,3,redShade);
+    if(weathered){ // a lightly weather-beaten second kiosk
+      R(x+10,y-34,3,5,BG);R(x+21,y-17,2,6,BG);
+      R(x+24,y-7,2,4,redLight);
+    }
+  }
+  function drawLandmark(item,x){
+    if(item.kind==='telephone'){drawTelephoneBox(x,item.style==='weathered');return}
+    const P=landmarkPalette,w=item.w,h=item.h,y=G-11-h;
+    // Soft facades and just enough architectural detail to identify the shops.
+    R(x,y,w,h,P.wall);R(x,y,w,2,P.line);
+    R(x,y,2,h,P.line);R(x+w-2,y,2,h,P.line);
+    if(item.kind==='job'){
+      // Civic office, with a sign and a plain upstairs window.
+      R(x+5,y+6,w-10,20,P.glass);
+      shopWindow(x+14,y+9,24,14);shopWindow(x+w-38,y+9,24,14);
+      shopSign(item.label,x+6,y+29,w-12);
+      shopWindow(x+13,y+47,25,h-47);shopDoor(x+44,y+45,23,h-45);
+      shopWindow(x+w-38,y+47,25,h-47);
+    }else if(item.kind==='pound'){
+      shopSign(item.label,x+5,y+7,w-10);
+      R(x+7,y+24,w-14,3,P.line);
+      shopWindow(x+10,y+29,38,h-29);shopDoor(x+54,y+27,21,h-27);
+      shopWindow(x+82,y+29,23,h-29);
+      txt('£1',x+29,y+46,10,P.sign,'center');
+    }else if(item.kind==='post'){
+      // Big traditional POST OFFICE sign, plus a little postbox.
+      R(x+3,y+2,w-6,3,P.line);
+      shopSign(item.label,x+6,y+9,w-12);
+      shopWindow(x+11,y+30,31,h-30);shopDoor(x+49,y+29,23,h-29);
+      shopWindow(x+79,y+30,18,h-30);
+      R(x+w+4,G-34,12,23,P.sign);R(x+w+3,G-36,14,4,P.sign);
+      R(x+w+6,G-29,8,2,BG);R(x+w+7,G-22,6,1,P.glass);
+    }else if(item.kind==='tesco'){
+      // Minimal Tesco forecourt, with distinctive thick roof band.
+      R(x+1,y+4,w-2,5,P.line);
+      shopSign(item.label,x+6,y+12,w-12);
+      for(let i=0;i<4;i++)R(x+14+i*24,y+29,14,2,P.line);
+      shopWindow(x+11,y+34,33,h-34);shopWindow(x+48,y+34,27,h-34);
+      shopDoor(x+81,y+32,25,h-32);
+    }else if(item.kind==='pub'){
+      // Each pub has its own silhouette, not merely a different sign:
+      // Red Lion = pitched roof / chimney; Dog & Duck = wide flat-roofed
+      // local with striped awning; Crown = tall half-timbered Tudor inn.
+      const dark='#8f97a2';
+      if(item.style==='classic'){
+        // THE RED LION — traditional two-storey pitched-roof village pub.
+        for(let i=0;i<7;i++)R(x+8+i*2,y-4-i*2,w-16-i*4,2,P.line);
+        R(x+19,y-25,10,16,P.line);R(x+18,y-27,12,3,P.sign);
+        R(x+12,y+8,w-24,2,P.line);
+        shopWindow(x+20,y+12,22,15);shopWindow(x+w-42,y+12,22,15);
+        shopSign(item.label,x+6,y+32,w-12);
+        shopWindow(x+10,y+48,23,h-48);
+        shopDoor(x+Math.floor(w/2)-10,y+44,20,h-44);
+        shopWindow(x+w-33,y+48,23,h-48);
+        // Square, hanging pub sign beside the building.
+        R(x+w-6,y+23,18,2,P.sign);R(x+w+9,y+24,2,5,P.sign);
+        R(x+w+3,y+29,14,12,dark);R(x+w+5,y+31,10,8,P.glass);
+        R(x+w+8,y+33,4,4,P.sign);
+      }else if(item.style==='broad'){
+        // DOG & DUCK — low, wide corner pub with a striped awning.
+        R(x+2,y-5,w-4,6,P.line);R(x+5,y-10,w-10,5,P.glass);
+        R(x+7,y+5,w-14,2,P.line);
+        shopWindow(x+14,y+11,19,15);shopWindow(x+39,y+11,19,15);
+        shopSign(item.label,x+9,y+29,w-18);
+        R(x+4,y+44,w-8,6,P.line);
+        for(let i=0;i<9;i++)R(x+6+i*11,y+45,5,5,P.glass);
+        shopWindow(x+10,y+53,24,h-53);
+        shopDoor(x+Math.floor(w/2)-10,y+51,20,h-51);
+        shopWindow(x+w-34,y+53,24,h-53);
+        // Little lamp and squat pub-sign bracket.
+        R(x+3,y+31,2,11,dark);R(x+1,y+34,6,3,dark);
+      }else{
+        // THE CROWN — recognisable Tudor pub: front gable and timbers.
+        R(x+4,y-2,w-8,3,dark);
+        for(let i=0;i<11;i++)R(x+9+i*3,y-5-i,w-18-i*6,3,dark);
+        R(x+14,y-26,8,19,P.line);R(x+12,y-28,12,3,dark);
+        // Framed upper-storey beams form a visible but restrained pattern.
+        R(x+10,y+5,w-20,2,dark);R(x+10,y+28,w-20,2,dark);
+        R(x+11,y+6,2,22,dark);R(x+w-13,y+6,2,22,dark);
+        R(x+32,y+7,2,21,dark);R(x+w-34,y+7,2,21,dark);
+        L(x+13,y+7,x+31,y+26,dark);L(x+31,y+7,x+13,y+26,dark);
+        L(x+w-32,y+7,x+w-14,y+26,dark);
+        L(x+w-14,y+7,x+w-32,y+26,dark);
+        shopSign(item.label,x+10,y+32,w-20);
+        shopWindow(x+10,y+50,22,h-50);
+        shopDoor(x+Math.floor(w/2)-10,y+45,20,h-45);
+        shopWindow(x+w-32,y+50,22,h-50);
+        // A crowned hanging sign.
+        R(x+w-7,y+10,13,2,P.sign);R(x+w+4,y+10,2,10,P.sign);
+        R(x+w,y+20,11,10,dark);R(x+w+2,y+22,7,6,P.glass);
+        R(x+w+4,y+23,3,2,P.sign);
+      }
+    }
+    if(stage>=3 && item.kind==='job'){
+      // Shuttered council window; late-game satire, still subtle.
+      R(x+13,y+47,25,3,P.line);R(x+13,y+53,25,2,P.line);
+    }
+  }
+  function drawBuildings(){
+    const shift=world*.34;
+    // Continuously wrap a non-repeating sequence of landmarks with generous gaps.
+    const section=Math.floor(shift/landmarkCycle);
+    for(let lap=section-1;lap<=section+1;lap++){
+      for(const item of landmarks){
+        const x=Math.round(224+item.position+lap*landmarkCycle-shift);
+        if(x>W+26 || x+item.w+22<0)continue;
+        drawLandmark(item,x);
+      }
+    }
+    // A little open sky; no dense generic office block skyline.
+    const cloudOffset=(world*.055)%620;
+    drawCloud(370-cloudOffset,43,.8);
+    drawCloud(960-cloudOffset,56,.65);
+  }
+  function drawRoad(){R(0,G+1,W,2,INK);for(let i=0;i<22;i++){let x=((i*42-Math.floor(world*1.1)%924)+924)%924-42;R(x,G+12,20,2,PALE)}R(0,G+39,W,1,PALE);
+    const curbShift=Math.floor(world*.95)%23;for(let i=-1;i<29;i++)R(i*23-curbShift,G+2,1,5,PALE);
+    if(stage>=1){for(let i=0;i<7;i++){let x=(i*130-Math.floor(world*.4)%910+910)%910;L(x,G-7,x+5,G-6,MID)}}
+  }
+  function drawRain(){if(stage<2)return;let count=stage===2?17:stage===3?32:48;for(let i=0;i<count;i++){let x=((i*79+Math.floor(world*.8)*3)%W+W)%W;let y=(i*43+Math.floor(frame*(i%3+2)))%(G-8);L(x,y,x-3,y+7,stage>=4?'#939aa5':'#d0d5dc')}}
+  function drawDistantExtras(){const x=(880-(world*.34)%1180);if(x>-80&&x<730){R(x,G-32,3,33,MID);R(x-20,G-35,44,3,MID);R(x-17,G-43,38,8,'#e5e8ec');txt(stage>=2?'CLOSED':'BUS STOP',x+1,G-37,7,MID,'center')}
+    if(stage>=3){const s=(1300-(world*.22)%1650);R(s,G-110,3,97,MID);R(s-4,G-110,42,3,MID);R(s+36,G-107,2,28,MID);R(s+26,G-78,20,9,PALE)}
+  }
+  function drawPerson(){const duck=person.duck,pj=person.jump;let x=96,y=Math.round(G-pj);const step=Math.floor(frame/6)%2;
+    // fixed, bored pixel citizen in a flat cap
+    if(duck){
+      R(x-2,y-11,31,9,INK);R(x+20,y-12,9,5,INK);R(x+7,y-14,13,8,INK);R(x+7,y-15,18,3,INK);R(x+17,y-13,10,2,INK);R(x+8,y-12,9,5,BG);R(x+15,y-11,2,2,INK);R(x+24,y-9,7,5,INK);R(x+4,y-3,9,3,INK);R(x+20,y-3,9,3,INK);
+    }else{
+      let leg=person.jump>0?0:step;
+      // legs and shoes
+      R(x+2,y-13,7,10,INK);R(x+13,y-13,7,10,INK);
+      if(person.jump>0){R(x-2,y-5,12,4,INK);R(x+13,y-5,12,4,INK)}
+      else if(leg){R(x-2,y-4,13,4,INK);R(x+15,y-8,7,8,INK);R(x+14,y-2,12,3,INK)}
+      else{R(x+2,y-8,7,8,INK);R(x-2,y-2,13,3,INK);R(x+16,y-4,12,4,INK)}
+      // suit jacket
+      R(x+1,y-28,20,17,INK);R(x+5,y-25,5,7,BG);R(x+11,y-25,2,7,BG);R(x+3,y-11,18,2,INK);
+      // arms, forward little fist
+      R(x+18,y-23,8,5,INK);R(x+23,y-19,4,5,INK);
+      // head, small nose and deadpan eye
+      R(x+6,y-39,13,13,INK);R(x+8,y-36,11,9,BG);R(x+18,y-32,5,3,INK);R(x+15,y-34,2,2,INK);R(x+8,y-29,8,2,INK);
+      // flat cap
+      R(x+5,y-42,17,4,INK);R(x+17,y-39,10,2,INK);R(x+6,y-44,11,3,INK);
+    }
+    // shadow
+    if(pj>3){R(x+4,G+3,21,2,'#c7cdd5')}
+  }
+  function drawCone(o){const x=Math.round(o.x),y=G;R(x,y-4,19,4,INK);R(x+2,y-7,15,3,CONE_ORANGE_DARK);R(x+4,y-11,11,4,CONE_ORANGE);R(x+6,y-17,7,7,CONE_ORANGE);R(x+8,y-22,3,6,CONE_ORANGE_DARK);R(x+5,y-11,9,3,BG)}
+  function drawBin(o){
+    const x=Math.round(o.x),y=G;
+    const isRed=o.variant==='red';
+    const base=isRed?BIN_RED:BIN_GREEN, dark=isRed?BIN_RED_DARK:BIN_GREEN_DARK, light=isRed?BIN_RED_LIGHT:BIN_GREEN_LIGHT;
+    // Two-wheel British household wheelie bin: proud hinged lid, back handle,
+    // tapered body, vertical molded ribs, council label and actual wheels.
+    // Some boroughs have green bins, others red, for a little visual variety.
+    R(x+1,y-34,3,10,INK);                      // rear lifting handle
+    R(x+2,y-37,12,3,INK);
+    R(x+4,y-39,26,3,INK);                      // recognizable broad hinged lid
+    R(x+2,y-36,31,4,dark);
+    R(x+29,y-34,5,3,dark);                     // protruding front lid lip
+    R(x+5,y-32,26,3,dark);                     // bin shoulder
+    R(x+5,y-29,26,16,dark);                    // rectangular bin body
+    R(x+7,y-13,22,8,dark);                     // inward taper by the wheels
+    R(x+8,y-29,20,17,base);                    // body face
+    R(x+10,y-11,16,5,base);
+    R(x+11,y-26,2,13,light);                   // distinctive molded ribs
+    R(x+17,y-26,2,13,light);
+    R(x+23,y-26,2,13,light);
+    R(x+14,y-24,9,7,'#f4f7f0');                // small council sticker
+    txt('B',x+18.5,y-18.5,6,dark,'center');
+    R(x+7,y-5,7,5,INK);                        // left wheel
+    R(x+24,y-5,7,5,INK);                       // right wheel
+    R(x+9,y-4,2,2,BG);                         // wheel hubs
+    R(x+26,y-4,2,2,BG);
+  }
+  function drawGull(o){const x=Math.round(o.x),y=G-30,w=Math.floor(o.wing/7)%2;
+    R(x+10,y+5,13,6,PIGEON_GREY_DARK);R(x+8,y+8,4,3,PIGEON_GREY_DARK);R(x+1,y+7,10,2,PIGEON_GREY_DARK);R(x+22,y+8,7,2,PIGEON_GREY_DARK);
+    if(w){R(x+11,y,4,8,PIGEON_GREY);R(x+14,y-4,4,7,PIGEON_GREY);R(x+18,y-2,3,8,PIGEON_GREY)}else{R(x+12,y+1,6,3,PIGEON_GREY);R(x+16,y+3,6,3,PIGEON_GREY);R(x+18,y+5,9,2,PIGEON_GREY)}
+    R(x+12,y+7,7,3,PIGEON_BREAST);R(x+8,y+6,1,1,BG);R(x+13,y+11,1,3,'#b86f42');R(x+19,y+11,1,3,'#b86f42');
+  }
+  function drawBill(o){const x=Math.round(o.x),y=G-32+Math.sin(o.wing*.2);R(x+1,y,28,15,INK);R(x+3,y+2,24,11,'#ffffff');L(x+3,y+2,x+15,y+9,BILL_RED_DARK);L(x+27,y+2,x+15,y+9,BILL_RED_DARK);R(x+3,y+2,24,2,BILL_RED_DARK);R(x+20,y+2,7,6,BILL_RED);R(x+4,y+9,10,2,BILL_RED_DARK);R(x+5,y+4,6,3,'#ffffff');txt('£',x+23,y+7,6,'#ffffff','center')}
+  function drawPoo(o){
+    const x=Math.round(o.x),y=G,t=o.wing;
+    // Classic three-tier pavement poo. Flies are animated, not stationary marks.
+    R(x+1,y-3,18,3,POO_BROWN_DARK);R(x+4,y-6,12,3,POO_BROWN);
+    R(x+7,y-9,7,4,POO_BROWN);R(x+9,y-11,3,3,POO_BROWN_DARK);
+    for(let i=0;i<2;i++){
+      const phase=t*.22+i*2.9;
+      const fx=Math.round(x+10+Math.sin(phase)*11+(i?4:-3));
+      const fy=Math.round(y-19+Math.cos(phase*1.31)*5-i*3);
+      const wings=Math.floor(t/3+i)%2;
+      R(fx,fy,2,2,INK);                    // fly body
+      R(fx-2,fy-1-wings,2,1,MID);          // flapping left wing
+      R(fx+2,fy-1+(wings-1),2,1,MID);      // flapping right wing
+      R(fx+1,fy+2,1,1,POO_BROWN_DARK);
+    }
+  }
+  function drawDog(o){
+    const x=Math.round(o.x),y=G;
+    const step=Math.floor(o.wing/8)%2;
+    const bob=step?0:1;
+    // A stocky, low-set Staffordshire Bull Terrier: broad blocky head,
+    // deep chest, short muzzle, muscular shoulders and short strong legs.
+    R(x+5,y-15+bob,19,10,DOG_GREYBLUE_DARK);            // solid muscular body
+    R(x+7,y-19+bob,11,6,DOG_GREYBLUE_DARK);             // shoulder ridge
+    R(x+21,y-21+bob,10,11,DOG_GREYBLUE_DARK);           // unmistakably broad Staffy head
+    R(x+20,y-23+bob,4,5,DOG_GREYBLUE_DARK);             // folded left ear
+    R(x+27,y-24+bob,3,6,DOG_GREYBLUE_DARK);             // triangular right ear
+    R(x+28,y-16+bob,6,5,DOG_GREYBLUE);             // short square muzzle
+    R(x+32,y-15+bob,2,2,INK);             // nose
+    R(x+25,y-18+bob,2,2,BG);              // expressive small eye
+    R(x+21,y-12+bob,2,6,DOG_GREYBLUE_LIGHT);              // front-neck/chest highlight
+    // Bright red collar, with alternating icy-blue and white chunky pixel spikes.
+    R(x+17,y-18+bob,10,5,'#942a38');  // shadow of red leather band
+    R(x+18,y-17+bob,9,3,'#dc3c4e');   // red collar front
+    R(x+17,y-20+bob,2,3,'#ffffff');   // white rear spike
+    R(x+20,y-22+bob,2,5,'#64b6ee');   // tall blue centre spike
+    R(x+21,y-22+bob,1,3,'#d9f2ff');  // icy-blue glint
+    R(x+24,y-20+bob,2,3,'#ffffff');   // white front spike
+    R(x+19,y-16+bob,1,1,'#fff1f1');  // stud highlight
+    R(x+23,y-13+bob,2,2,'#64b6ee'); // blue tag
+    R(x+8,y-7+bob,5,7-bob,DOG_GREYBLUE_DARK);           // rear paws
+    R(x+17,y-7+bob,5,7-bob,DOG_GREYBLUE_DARK);
+    R(x+25,y-7+bob,5,7-bob,DOG_GREYBLUE_DARK);
+    if(step)R(x+27,y-3,7,3,DOG_GREYBLUE_DARK);else R(x+23,y-2,8,2,DOG_GREYBLUE_DARK);
+    R(x+3,y-16+bob,5,4,DOG_GREYBLUE_DARK);              // upturned wagging tail
+    R(x+2,y-20+(step?0:2),3,6,DOG_GREYBLUE_DARK);
+  }
+  function drawPint(o){
+    // A glistening amber pint. The outline is still crisp 1px canvas art,
+    // with just enough colour and animated light to feel worth collecting.
+    const x=Math.round(o.x),y=Math.round(o.y+Math.sin(o.wing*.10)*2);
+    R(x+3,y+2,15,19,INK);               // chunky glass outline
+    R(x+5,y+4,11,14,BEER);             // amber lager
+    R(x+5,y+13,11,4,BEER_DARK);        // deeper beer near the base
+    R(x+4,y+1,13,5,BEER_FOAM);         // thick frothy head
+    R(x+3,y+2,15,2,BG);               // white foam crest
+    R(x+2,y,17,2,INK);                // glass rim
+    R(x+6,y+6,2,7,'#fcfdff');         // glistening vertical highlight
+    R(x+6,y+20,10,2,PALE);            // heavy glass base
+    // A handle of tiny sparkles that twinkle on alternating frames.
+    const on=Math.floor(o.wing/8)%2;
+    if(on===0){
+      R(x-4,y+5,2,6,BEER);R(x-6,y+7,6,2,BEER);
+      R(x+21,y-4,2,9,BEER_DARK);R(x+18,y-1,8,2,BEER_DARK);
+    }else{
+      R(x+21,y+6,2,8,BEER);R(x+18,y+9,8,2,BEER);
+      R(x-5,y-3,2,8,BEER_DARK);R(x-8,y,8,2,BEER_DARK);
+    }
+  }
+  function drawInvincibility(){
+    if(invincible<=0)return;
+    // Tight pixel-art shimmer following the commuter rather than a big UI box.
+    const x=94,y=Math.round(G-person.jump),f=Math.floor(frame/5)%4;
+    for(let i=0;i<4;i++){
+      const a=(i+f)%4;
+      const sx=x+[-11,35,6,30][a],sy=y+[-31,-30,-51,-9][a];
+      R(sx,sy,3,3,i%2?BEER:BEER_FOAM);R(sx+1,sy-3,1,9,BEER_DARK);
+    }
+  }
+  function drawPowerHud(){
+    if(invincible<=0)return;
+    const remaining=Math.max(0,invincible/60).toFixed(1);
+    txt('PINT POWER '+remaining+'s',W-11,16,9,BEER_DARK,'right');
+    R(W-104,21,93,4,PALE);
+    R(W-104,21,Math.ceil(93*invincible/PINT_DURATION),4,BEER);
+  }
+  function drawForeground(){for(let i=0;i<obstacles.length;i++){const o=obstacles[i];if(o.kind==='cone')drawCone(o);else if(o.kind==='bin')drawBin(o);else if(o.kind==='poo')drawPoo(o);else if(o.kind==='dog')drawDog(o);else if(o.kind==='gull')drawGull(o);else drawBill(o)}if(pint)drawPint(pint);drawInvincibility();drawPerson();for(const p of particles)R(p.x,p.y,2,2,p.gold?BEER:(p.life<9?PALE:INK))}
+  function render(){R(0,0,W,H,BG);drawBuildings();drawDistantExtras();if(stage>=4){R(540,19,2,11,INK);R(536,23,10,2,INK);R(534,25,14,1,PALE);txt('STILL FINE',517,46,7,MID)}drawRain();drawRoad();drawForeground();drawPowerHud();if(stage>=1&&invincible<=0)txt('!'+' '.repeat(0),W-26,20,16,MID)}
+  function loop(time){if(!last)last=time;const dt=Math.min(2.3,(time-last)/16.6667||1);last=time;tick(dt);render();requestAnimationFrame(loop)}
+  document.addEventListener('keydown',e=>{if(e.code==='Space'||e.code==='ArrowDown'){e.preventDefault();if(e.repeat&&e.code==='Space')return;if(e.code==='Space'){if(mode==='dead')begin(true);else jump()}else{if(mode==='dead')return;setDuck(true)}}});
+  document.addEventListener('keyup',e=>{if(e.code==='ArrowDown'){e.preventDefault();setDuck(false)}});
+  window.addEventListener('blur',()=>{duckHeld=false;person.duck=false});
+  ui.start.addEventListener('click',()=>begin(false));
+  ui.sound.addEventListener('click',()=>{muted=!muted;ui.sound.textContent='SOUND: '+(muted?'OFF':'ON');ui.sound.setAttribute('aria-pressed',String(!muted));sound(560,.08)});
+  ui.share.addEventListener('click',async()=>{const message=`I survived ${Math.floor(frame/60)} seconds and scored ${Math.floor(score)} in EVERYTHING IS FINE. Britain's least reassuring browser game. ${location.href.startsWith('file:')?'':location.href}`.trim();try{if(navigator.share)await navigator.share({title:'Everything Is Fine',text:message});else if(navigator.clipboard){await navigator.clipboard.writeText(message);ui.share.textContent='COPIED ✓';setTimeout(()=>ui.share.textContent='SHARE MISERY ↗',1600)}else{ui.share.textContent='SHARE UNAVAILABLE';setTimeout(()=>ui.share.textContent='SHARE MISERY ↗',1600)}}catch(e){if(e.name!=='AbortError')ui.share.textContent='SHARE UNAVAILABLE'}});
+  // Pointer controls, including mobile. These deliberately duplicate only Space/Down.
+  ui.jump.addEventListener('pointerdown',e=>{e.preventDefault();jump()});
+  ui.duck.addEventListener('pointerdown',e=>{e.preventDefault();ui.duck.classList.add('pressed');try{ui.duck.setPointerCapture(e.pointerId)}catch(ex){}setDuck(true)});
+  for(const name of ['pointerup','pointercancel','lostpointercapture'])ui.duck.addEventListener(name,()=>{ui.duck.classList.remove('pressed');setDuck(false)});
+  $('gameArea').addEventListener('pointerdown',e=>{if(e.target===canvas&&e.pointerType!=='mouse'&&mode!=='dead'){e.preventDefault();jump()}});
+  begin(false);requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
